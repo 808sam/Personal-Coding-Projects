@@ -28,7 +28,7 @@ void Encryptor::GenerateKeys()
 	publicMod = p * q;
 	size_t phi = (p - 1) * (q - 1);
 
-	size_t publicKey = (rand() % PUBLIC_KEY_SIZE + PUBLIC_KEY_MIN) % NUM_PRIMES; //public key random index for prime number
+	size_t publicKey = ((rand() % PUBLIC_KEY_SIZE) + PUBLIC_KEY_MIN) % NUM_PRIMES; //public key random index for prime number
 	publicExp = primes[publicKey];
 
 	//make sure publicKey is valid
@@ -42,13 +42,13 @@ void Encryptor::GenerateKeys()
 	//find private key
 	//euclids method
 	/*
-	to1  toPr
-	left right
+	left  right
+	to1 toPr
 	*/
-	int to1 = publicExp;
-	int toPr = 1;
 	size_t left = phi;
 	size_t right = phi;
+	int to1 = publicExp;
+	int toPr = 1;
 	int newto1;
 	int newtoPr;
 
@@ -56,14 +56,16 @@ void Encryptor::GenerateKeys()
 	{
 		//step on right side
 		newtoPr = right - (toPr * (left / to1));
-		while (newtoPr < 1) newtoPr += phi;
-		right = toPr;
-		toPr = newtoPr;
+		while (newtoPr < 0) newtoPr += phi;
 
 		//step on left side
 		newto1 = left % to1;
+		
+		//step down
 		left = to1;
+		right = toPr;
 		to1 = newto1;
+		toPr = newtoPr;
 	}
 	privateKey = toPr;
 }
@@ -116,7 +118,7 @@ void Encryptor::FileWrite(ofstream& file)
 	size_t key;
 	size_t mod;
 	string message;
-	size_t numChars = 0;
+	size_t numCharsMax = 0;
 
 	cout << "Enter key: ";
 	cin >> key;
@@ -127,26 +129,29 @@ void Encryptor::FileWrite(ofstream& file)
 	cout << "Write message: " << endl;
 	getline(cin, message);
 
-	//get number of characters
-	size_t maxNum = 95;
+	//get number of characters we can map to at once
+	size_t maxNum = 1;
 	while (maxNum < mod)
 	{
-		numChars++;
+		numCharsMax++;
 		maxNum *= 95;
 	}
+	//number of characters we can guarenteed map from
+	size_t numCharsMin = numCharsMax-1;
 
 	string currWord;
-	for (size_t i = 0; i < message.size(); i += numChars)
+	for (size_t i = 0; i < message.size(); i += numCharsMin)
 	{
-		if (message.size() - i > numChars)
+		if (message.size() - i > numCharsMin)
 		{
-			currWord = message.substr(i, numChars);
+			currWord = message.substr(i, numCharsMin);
 		}
 		else
 		{
-			currWord = message.substr(i, message.size() - 1);
+			currWord = message.substr(i);
+			while (currWord.size() < numCharsMin) currWord += " ";
 		}
-		file << NumToString(Crypt(key, mod, StringToNum(currWord)), numChars + 1);
+		file << NumToString(Crypt(key, mod, StringToNum(currWord)), numCharsMax);
 	}
 	file << endl;
 }
@@ -168,7 +173,7 @@ void Encryptor::FileRead(ifstream& file)
 	size_t numLines = 0;
 	while (file >> mod)
 	{
-		size_t numChars = 0;
+		size_t numCharsMax = 0;
 
 		file.ignore();
 		getline(file, currLine);
@@ -177,18 +182,17 @@ void Encryptor::FileRead(ifstream& file)
 		size_t maxNum = 1;
 		while (maxNum < mod)
 		{
-			numChars++;
+			numCharsMax++;
 			maxNum *= 95;
 		}
 
 		cout << ++numLines << ": ";
-		for (size_t i = 0; i < currLine.size(); i += numChars)
+		for (size_t i = 0; i < currLine.size(); i += numCharsMax)
 		{
 			string currWord;
-			if (currLine.size() - i > numChars) currWord = currLine.substr(i, numChars);
+			if (currLine.size() - i > numCharsMax) currWord = currLine.substr(i, numCharsMax);
 			else currWord = currLine.substr(i, currLine.size() - i);
-
-			cout << NumToString(Crypt(key, mod, StringToNum(currWord)), numChars - 1);
+			cout << NumToString(Crypt(key, mod, StringToNum(currWord)), numCharsMax-1);
 		}
 		cout << endl;
 	}
@@ -202,9 +206,9 @@ size_t* Encryptor::GeneratePrimes(size_t x)
 	for (size_t i = 2; numPrimes < x; ++i)
 	{
 		bool isPrime = true;
-		for (size_t j = 2; j < i / 2; ++j)
+		for (size_t j = 0; j < numPrimes; ++j)
 		{
-			if (i % j == 0)
+			if (i % primeArray[j] == 0)
 			{
 				isPrime = false;
 				break;
@@ -215,45 +219,8 @@ size_t* Encryptor::GeneratePrimes(size_t x)
 	return primeArray;
 }
 
-//copied from source.cpp
-string Encryptor::NumToString(int num, int numChars)
-{
-	bool adjust = false;
-	if (numChars == 0) adjust = true;
-
-	long long charValue = 1;
-
-	if (adjust)
-	{
-		while (num >= charValue * 95)
-		{
-			charValue *= 95;
-			++numChars;
-		}
-		++numChars;
-	}
-	else
-	{
-		for (size_t i = 0; i < numChars - 1; ++i)
-		{
-			charValue *= 95;
-		}
-	}
-
-	string out = "";
-	while (charValue >= 95)
-	{
-		int currChar = 0;
-		while (num >= charValue)
-		{
-			num -= charValue;
-			++currChar;
-		}
-		charValue /= 95;
-		out += (char)(currChar + 32);
-	}
-	return out + (char)(num + 32);
-}
+//uses ascii chars from 32 to 127 as if it was a base 95 system
+//converts input string into a number to be used in encryption algorithm
 long long Encryptor::StringToNum(string word)
 {
 	//get each char
@@ -265,4 +232,42 @@ long long Encryptor::StringToNum(string word)
 		charValue *= 95;
 	}
 	return outNum;
+}
+
+//does the opposite of StringToNum
+//if numChars not specified will try to convert the entire input
+string Encryptor::NumToString(int num, int numCharsMax)
+{
+	bool adjust = false;
+	if (numCharsMax == 0) adjust = true;
+
+	long long charValue = 1;
+
+	if (adjust)
+	{
+		while (num >= charValue * 95)
+		{
+			charValue *= 95;
+			++numCharsMax;
+		}
+		++numCharsMax;
+	}
+	else
+	{
+		for (size_t i = 0; i < numCharsMax - 1; ++i)
+		{
+			charValue *= 95;
+		}
+	}
+
+	string out = "";
+	while (charValue >= 95)
+	{
+		int currChar = 0;
+		currChar = num/charValue;
+		num %= charValue;
+		charValue /= 95;
+		out += (char)(currChar + 32);
+	}
+	return out + (char)(num + 32);
 }
