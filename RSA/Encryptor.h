@@ -50,6 +50,9 @@ public:
 	//will run crypt on whole file, it's up to the human to see which one makes sense
 	void FileRead(ifstream& file);
 
+	//for text read and write if can make them work
+	string NumToString(int num, int numChars = 0);
+	long long StringToNum(string word);
 
 private:
 	size_t* primes;
@@ -59,9 +62,5 @@ private:
 	const size_t NUM_PRIMES;
 	//generates a list of x prime numbers
 	size_t* GeneratePrimes(size_t x);
-
-	//for text read and write if can make them work
-	string NumToString(int num, int numChars = 0);
-	long long StringToNum(string word);
 };
 #endif
