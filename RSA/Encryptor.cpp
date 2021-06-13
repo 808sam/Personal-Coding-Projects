@@ -7,31 +7,36 @@ Encryptor::Encryptor(size_t x) : NUM_PRIMES(x) //default 200 prime security
 	primes = GeneratePrimes(x);
 	srand(time(NULL));
 }
+
 //applies (message^key)%mod for RSA encryption
 size_t Encryptor::Crypt(size_t key, long long mod, long long message)
 {
 	long long xMessage = message;
-	for (size_t i = 0; i < key - 1; ++i)
+	for (size_t i = 0; i < key - 1; ++i) //can't do power all at once or would overflow
 	{
 		xMessage *= message;
 		xMessage %= mod;
 	}
 	return xMessage;
 }
+
 //generate a random set of keys
 void Encryptor::GenerateKeys()
 {
+	//pick 2 random primes for RSA encryption
 	size_t p = primes[(rand() % (NUM_PRIMES / 2)) + (NUM_PRIMES / 2)];
 	size_t q = primes[(rand() % (NUM_PRIMES / 2)) + (NUM_PRIMES / 2)];
 
-	//generate public key
+	//calculate phi for euclid method
 	publicMod = p * q;
 	size_t phi = (p - 1) * (q - 1);
 
+	//pick a random prime for the public key
 	size_t publicKey = ((rand() % PUBLIC_KEY_SIZE) + PUBLIC_KEY_MIN) % NUM_PRIMES; //public key random index for prime number
 	publicExp = primes[publicKey];
 
 	//make sure publicKey is valid
+	//in euclid method, publickey needs to be coprime with phi
 	for (size_t i = publicKey; (phi % primes[i]) == 0; ++i)
 	{
 		publicExp = primes[i + 1];
@@ -43,32 +48,33 @@ void Encryptor::GenerateKeys()
 	//euclids method
 	/*
 	left  right
-	to1 toPr
+	to1 toPrivate
 	*/
 	size_t left = phi;
 	size_t right = phi;
 	int to1 = publicExp;
-	int toPr = 1;
+	int toPrivate = 1;
 	int newto1;
-	int newtoPr;
+	int newtoPrivate;
 
 	while (to1 != 1)
 	{
 		//step on right side
-		newtoPr = right - (toPr * (left / to1));
-		while (newtoPr < 0) newtoPr += phi;
+		newtoPrivate = right - (toPrivate * (left / to1));
+		while (newtoPrivate < 0) newtoPrivate += phi;
 
 		//step on left side
 		newto1 = left % to1;
 		
 		//step down
 		left = to1;
-		right = toPr;
+		right = toPrivate;
 		to1 = newto1;
-		toPr = newtoPr;
+		toPrivate = newtoPrivate;
 	}
-	privateKey = toPr;
+	privateKey = toPrivate;
 }
+
 
 //for testing
 //reads in a encrypted number and public key from file
@@ -89,6 +95,7 @@ void Encryptor::FileReadNum(ifstream& file)
 		cout << Crypt(key, mod, num) << endl;
 	}
 }
+
 //writes the public key and a encrypted number to a file
 //for testing
 void Encryptor::FileWriteNum(ofstream& file)
@@ -109,6 +116,7 @@ void Encryptor::FileWriteNum(ofstream& file)
 
 	file << Crypt(key, mod, userNum) << endl;
 }
+
 //asks for public key info and message
 //turns message into a number and writes encrypted date
 //also writes public key
@@ -136,27 +144,32 @@ void Encryptor::FileWrite(ofstream& file)
 		numCharsMax++;
 		maxNum *= 95;
 	}
+
 	//number of characters we can guarenteed map from
 	size_t numCharsMin = numCharsMax-1;
 
+	//loop through encrypting one chunk at a time
 	string currWord;
 	for (size_t i = 0; i < message.size(); i += numCharsMin)
 	{
 		if (message.size() - i > numCharsMin)
 		{
-			currWord = message.substr(i, numCharsMin);
+			currWord = message.substr(i, numCharsMin); //take just one chunk to encrypt
 		}
 		else
 		{
 			currWord = message.substr(i);
-			while (currWord.size() < numCharsMin) currWord += " ";
+			while (currWord.size() < numCharsMin) currWord += " "; //pad with spaces to make the right length
 		}
+
+		//write encrypted version to the output file
 		file << NumToString(Crypt(key, mod, StringToNum(currWord)), numCharsMax);
 	}
 	file << endl;
 }
+
 //asks for private key
-//reads in file using stored public key info and private key to decrypt
+//reads in file using public key info in file and private key to decrypt
 //file can be written to multiple times with different encryption
 //will run crypt on whole file, it's up to the human to see which one makes sense
 void Encryptor::FileRead(ifstream& file)
@@ -170,15 +183,17 @@ void Encryptor::FileRead(ifstream& file)
 	cin >> key;
 	cin.ignore();
 
+	//go line by line trying to decrypt
 	size_t numLines = 0;
 	while (file >> mod)
 	{
 		size_t numCharsMax = 0;
 
 		file.ignore();
-		getline(file, currLine);
+		getline(file, currLine); //get current line to decrypt
 
-		//get number of characters
+		//get number of characters we can decrypt at once
+		//determined by modulo part of public key
 		size_t maxNum = 1;
 		while (maxNum < mod)
 		{
@@ -186,12 +201,14 @@ void Encryptor::FileRead(ifstream& file)
 			maxNum *= 95;
 		}
 
+		//decrypt each chunk of chars
 		cout << ++numLines << ": ";
 		for (size_t i = 0; i < currLine.size(); i += numCharsMax)
 		{
 			string currWord;
 			if (currLine.size() - i > numCharsMax) currWord = currLine.substr(i, numCharsMax);
-			else currWord = currLine.substr(i, currLine.size() - i);
+			else currWord = currLine.substr(i, currLine.size() - i); //shouldn't need this if file written to properly, but just to be safe
+			//write decrypted chunk of chars to console
 			cout << NumToString(Crypt(key, mod, StringToNum(currWord)), numCharsMax-1);
 		}
 		cout << endl;
@@ -203,9 +220,11 @@ size_t* Encryptor::GeneratePrimes(size_t x)
 {
 	size_t* primeArray = new size_t[x];
 	size_t numPrimes = 0;
+	//generate primes until we have x primes
 	for (size_t i = 2; numPrimes < x; ++i)
 	{
 		bool isPrime = true;
+		//check if a number is prime by checking if it's devisible by any already calculated prime
 		for (size_t j = 0; j < numPrimes; ++j)
 		{
 			if (i % primeArray[j] == 0)
@@ -214,7 +233,7 @@ size_t* Encryptor::GeneratePrimes(size_t x)
 				break;
 			}
 		}
-		if (isPrime) primeArray[numPrimes++] = i;
+		if (isPrime) primeArray[numPrimes++] = i; //if prime, add to the vector
 	}
 	return primeArray;
 }
@@ -238,12 +257,15 @@ long long Encryptor::StringToNum(string word)
 //if numChars not specified will try to convert the entire input
 string Encryptor::NumToString(int num, int numCharsMax)
 {
+	//if numCharsMax was specified, this will stay false
 	bool adjust = false;
 	if (numCharsMax == 0) adjust = true;
 
 	long long charValue = 1;
 
-	if (adjust)
+	//calculate charvalue
+	//charvalue will be the highest "place value" of the chars
+	if (adjust) //find how many chars we'll need
 	{
 		while (num >= charValue * 95)
 		{
@@ -252,7 +274,7 @@ string Encryptor::NumToString(int num, int numCharsMax)
 		}
 		++numCharsMax;
 	}
-	else
+	else //already told how many chars we'll need. Will pad beggining with spaces if needed
 	{
 		for (size_t i = 0; i < numCharsMax - 1; ++i)
 		{
@@ -260,6 +282,7 @@ string Encryptor::NumToString(int num, int numCharsMax)
 		}
 	}
 
+	//go letter by letter determining each character
 	string out = "";
 	while (charValue >= 95)
 	{
