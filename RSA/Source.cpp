@@ -1,6 +1,16 @@
+//created by Samuel Owens
+//basic tests showing a working RSA encryption with small keys
+//not very secure, but a good proof of concept
+//when running a.out, include the file you'll be reading and writing to as a parameter
+
+
+
+
 #include <iostream>
 #include "Encryptor.h"
 #include <fstream>
+
+#define NUM_PRIMES_SECURE 50
 
 using namespace std;
 
@@ -19,15 +29,23 @@ void PrintMenu()
 int main(int argc, char** argv)
 {	
 	//pick how many primes encryption will calculate
-	const int NUM_PRIMES_SECURE = 50; //Encryptor defaults to 200 primes 
-	Encryptor Encoder(NUM_PRIMES_SECURE);
+	Encryptor Encoder(NUM_PRIMES_SECURE); //Encryptor defaults to 200 primes 
+
+
+	//Intro message
+	cout << "\n\tRSA Encryption Tests" << endl;
+	cout << "Create RSA encryption keys and use those keys to read and write multiple\n"
+		<< "encrypted messages to and from the output file. Feel free to check out the\n"
+		<< "code to tweak parameters and see how it works\n"
+		<< "Have Fun!" << "\n\n";
+
 
 	string command; //holds the menu choice
 	PrintMenu();
 	cout << "What would you like to do?" << endl;
 	getline(cin, command);
 
-	
+	//loop through menu until user quits
 	while (command != "q")
 	{
 		if (command == "w") //write to file
@@ -45,15 +63,18 @@ int main(int argc, char** argv)
 		else if (command == "k") //generate new keys
 		{
 			Encoder.GenerateKeys();
-			cout << "public Key: " << Encoder.GetPublicExp() << endl << "public mod: " << Encoder.GetPublicMod() << endl << "private key: " << Encoder.GetPrivateKey() << endl;
+			cout << "public Key: " << Encoder.GetPublicExp() << endl 
+				<< "public mod: " << Encoder.GetPublicMod() << endl 
+				<< "private key: " << Encoder.GetPrivateKey() << endl;
 		}
 		else if (command == "d") //delete file contents
 		{
 			ofstream out(argv[1]);
 			out.close();
-		}		else if (command == "c") system("CLS"); //clear screan
+		}
 		else if (command == "c") //clear terminal screen
 		{
+			system("cls"); //try both for different systems
 			system("clear");
 		}
 		else if (command == "e") //export key info, for testing
@@ -93,7 +114,7 @@ int main(int argc, char** argv)
 			Encoder.FileReadNum(in);
 			in.close();
 		}
-		else if (command != "q") //invalid choice
+		else if (command != "q") //invalid choice, print menu
 		{
 			PrintMenu();
 		}
