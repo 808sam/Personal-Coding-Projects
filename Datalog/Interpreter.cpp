@@ -4,6 +4,7 @@ Interpreter::~Interpreter()
 {
 }
 
+//finds which tuples answer a query
 Relation Interpreter::InterpretQuery(Predicate query, Relation relation = Relation())
 {
 	//Select
@@ -37,6 +38,7 @@ Relation Interpreter::InterpretQuery(Predicate query, Relation relation = Relati
 	return relation;
 }
 
+//evaluated all rules and queries, returning a string with the results
 std::string Interpreter::Run()
 {
 	std::string outString = "";
@@ -46,6 +48,7 @@ std::string Interpreter::Run()
 	return outString;
 }
 
+//evaluates all queries, returning a string with the results
 std::string Interpreter::QueriesEvalToString()
 {
 	std::string outString = "Query Evaluation\n";
@@ -89,11 +92,13 @@ std::string Interpreter::QueriesEvalToString()
 	return outString;
 }
 
+//evaluates all rules, returning a string with the results
 std::string Interpreter::RulesEvalToString()
 {
 	std::string outString = "Rule Evaluation\n";
 	bool isNewFact = true;
 	size_t numPasses = 0;
+	//for self dependancy, if facts are added keep reiterating
 	while (isNewFact)
 	{
 		++numPasses;

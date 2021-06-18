@@ -11,14 +11,21 @@
 #include "Rule.h"
 #include "Parameter.h"
 
+
+//build up data from token
+//stores all schemes, facts, rules, and queries
 class DatalogProgram
 {
 public:
 	DatalogProgram();
 	~DatalogProgram();
+	//goes through tokens vector determining rules, schemes, facts, and queries
+	//also will build up the domain of ID's seen
 	bool Parse(std::vector<Token*>);
+	//prints out the Schemes, Facts, Rules, and Queries
 	std::string ToString();
 
+	//getters
 	std::vector<Predicate> GetSchemes() { return schemes; }
 	std::vector<Predicate> GetFacts() { return facts; }
 	std::vector<Rule> GetRules() { return rules; }
@@ -34,10 +41,13 @@ private:
 	std::vector<Token*>::iterator currToken;
 
 
-	//functions for recursive parse
+	//used for checking simple single character tokens with set values
 	std::string Match(TokenType);
+	//checks if a string is in the Domain, if not it is added
 	void CheckDomain(std::string);
 
+	//functions for recursive parse
+	//based on Datalog grammer
 	void SchemeList();
 	void FactList();
 	void RuleList();

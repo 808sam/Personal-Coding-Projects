@@ -4,6 +4,7 @@ Relation::~Relation()
 {
 }
 
+//returns a relation with the same scheme put only with tuples with given value at index
 Relation Relation::SelectValue(std::string indexName, std::string value)
 {
 	std::set<Tuple> subsetTuples;
@@ -24,6 +25,7 @@ Relation Relation::SelectValue(std::string indexName, std::string value)
 	return Relation(name, scheme, subsetTuples);
 }
 
+//returns a relation with the same scheme put only with tuples with the same value at the 2 indecies
 Relation Relation::SelectIndex(std::string index1, std::string index2)
 {
 	std::set<Tuple> subsetTuples;
@@ -49,6 +51,7 @@ Relation Relation::SelectIndex(std::string index1, std::string index2)
 	return Relation(name, scheme, subsetTuples);
 }
 
+//retuns relation with only the specified collumns of the scheme
 Relation Relation::Project(std::vector<std::string> indexNames)
 {
 	Scheme newScheme(indexNames);
@@ -71,21 +74,14 @@ Relation Relation::Project(std::vector<std::string> indexNames)
 	return Relation(name, newScheme, newTuples);
 }
 
+//returns a relation with renames scheme values
 Relation Relation::Rename(std::vector<std::string> newScheme)
 {
 	return Relation(name, newScheme, tuples);
 }
 
-std::string Relation::ToString()
-{
-	std::string returnString = name;
-	for (Tuple tuple : tuples)
-	{
-		returnString += tuple.ToString();
-	}
-	return returnString;
-}
-
+//returns a relation that's the join of this relation and parameter relation
+//will compare tuples for joining based on where the 2 schemes of the relations overlap
 Relation Relation::Join(Relation relation)
 {
 	//make new scheme
@@ -120,15 +116,28 @@ Relation Relation::Join(Relation relation)
 	return Relation(name + relation.GetName(), newScheme, newTuples);
 }
 
-bool Relation::HasTuple(Tuple tuple)
+//returns data of every tuple in relation
+std::string Relation::ToString()
 {
-	return tuples.find(tuple) != tuples.end();
+	std::string returnString = name;
+	for (Tuple tuple : tuples)
+	{
+		returnString += tuple.ToString();
+	}
+	return returnString;
 }
 
+//adds tuples to the relation
 void Relation::AddTuples(std::set<Tuple> tuplesIn)
 {
 	for (Tuple tuple : tuplesIn)
 	{
 		tuples.emplace(tuple);
 	}
+}
+
+//checks if given tuple is in the relation set of tuples
+bool Relation::HasTuple(Tuple tuple)
+{
+	return tuples.find(tuple) != tuples.end();
 }

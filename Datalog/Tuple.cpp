@@ -5,6 +5,7 @@ Tuple::~Tuple()
 {
 }
 
+//print each element in the tuple as a comma separated list in parenthesis
 std::string Tuple::ToString()
 {
 	std::string outString = "";
@@ -18,12 +19,15 @@ std::string Tuple::ToString()
 	return outString;
 }
 
+//uses vector comparisons to define < for tuple
+//defined so computer can know how to add tuples to a set
 bool Tuple::operator<(Tuple const& tuple) const 
 {
 	return values < tuple.GetValues();
 }
 
-
+//takes this tuples scheme, another tuples and it's scheme
+//returns true if both tuples have the same value everywhere the schemes match
 bool Tuple::CanJoin(std::vector<std::string> myScheme, Tuple tupleIn, std::vector<std::string> otherScheme)
 {
 	for (size_t i = 0; i < myScheme.size(); ++i)
@@ -42,6 +46,8 @@ bool Tuple::CanJoin(std::vector<std::string> myScheme, Tuple tupleIn, std::vecto
 	return true;
 }
 
+//Joins 2 tuples together based on the given scheme
+//no check if values are the same, first tuple will overwright second
 Tuple Tuple::Join(std::vector<std::string> myScheme, Tuple tupleIn, std::vector<std::string> otherScheme)
 {
 	std::vector<std::string> newValues(values);

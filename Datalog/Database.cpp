@@ -1,5 +1,6 @@
 #include "Database.h"
 
+//creates a relation for each scheme and populates the relation using facts
 Database::Database(std::vector<Predicate> schemes, std::vector<Predicate> facts)
 {
 	while (schemes.size() != 0)
@@ -41,13 +42,13 @@ Database::Database(std::vector<Predicate> schemes, std::vector<Predicate> facts)
 Database::~Database()
 {
 }
-
+//returns the relation with a specific name
 Relation Database::GetRelation(std::string name)
 {
 	return relationMap.at(name);
 }
 
-
+//adds all tuples to the relation given by the name
 void Database::AddToRelation(std::string name, std::set<Tuple> tuples)
 {
 	relationMap.at(name).AddTuples(tuples);

@@ -5,12 +5,13 @@
 DatalogProgram::DatalogProgram()
 {
 }
-
-
 DatalogProgram::~DatalogProgram()
 {
 }
 
+//goes through tokens vector determining rules, schemes, facts, and queries
+//also will build up the domain of ID's seen
+//starts recurrsive calls based on Datalog Grammer
 bool DatalogProgram::Parse(std::vector<Token*> tokens)
 {
 	currToken = tokens.begin();
@@ -33,6 +34,7 @@ bool DatalogProgram::Parse(std::vector<Token*> tokens)
 	}
 }
 
+//prints out the Schemes, Facts, Rules, and Queries
 std::string DatalogProgram::ToString()
 {
 	std::string outString = "Schemes(" + std::to_string(schemes.size()) + "):\n";
@@ -69,7 +71,7 @@ std::string DatalogProgram::ToString()
 }
 
 
-//functions for recursive parse
+//used for checking simple single character tokens with set values
 std::string DatalogProgram::Match(TokenType type)
 {
 	std::string value;
@@ -81,6 +83,8 @@ std::string DatalogProgram::Match(TokenType type)
 	else throw currToken;
 	return value;
 }
+
+//checks if a string is in the Domain, if not it is added
 void DatalogProgram::CheckDomain(std::string str) {
 	for (size_t i = 0; i < domain.size(); ++i)
 	{
@@ -94,6 +98,9 @@ void DatalogProgram::CheckDomain(std::string str) {
 	domain.push_back(str);
 }
 
+//all following functions implement the grammer we were given
+//if you want to, the grammer shouldn't be too difficult to rederive, just look at the function calls
+//left as an exersize for the reader XD
 void DatalogProgram::SchemeList()
 {
 	if ((*currToken)->type == ID)
@@ -122,7 +129,6 @@ void DatalogProgram::QueryList()
 		Query(); QueryList();
 	}
 }
-
 void DatalogProgram::Scheme()
 {
 	std::string schemeId = Match(ID);
@@ -168,7 +174,6 @@ void DatalogProgram::Query()
 	queries.push_back(PredicateParse(PRED_QUERY));
 	Match(Q_MARK);
 }
-
 Predicate DatalogProgram::HeadPredicate(PredicateType predType)
 {
 	std::string predId = Match(ID);
@@ -189,7 +194,6 @@ Predicate DatalogProgram::PredicateParse(PredicateType predType)
 	paramList.insert(paramList.begin(), firstParam);
 	return Predicate(predType, predId, paramList);
 }
-
 std::vector<Predicate> DatalogProgram::PredicateList(PredicateType predType)
 {
 	std::vector<Predicate> outVect;
@@ -229,7 +233,7 @@ std::vector<Parameter> DatalogProgram::StringList()
 	}
 	return outVect;
 }
-std::vector<Parameter> DatalogProgram::IdList() //fixme, sheme only gets first param?
+std::vector<Parameter> DatalogProgram::IdList()
 {
 	std::vector<Parameter> outVect;
 	std::string idVal;
@@ -243,7 +247,6 @@ std::vector<Parameter> DatalogProgram::IdList() //fixme, sheme only gets first p
 	}
 	return outVect;
 }
-
 Parameter DatalogProgram::ParameterParse()
 {
 	if ((*currToken)->type == STRING)
@@ -260,6 +263,9 @@ Parameter DatalogProgram::ParameterParse()
 	}
 	else throw currToken;
 }
+
+//final datalog program doesn't actually use Expressions for anything
+//Expression and Operator were just added to be a challenge on one of the Labs
 std::string DatalogProgram::Expression()
 {
 	Match(LEFT_PAREN);
@@ -270,6 +276,7 @@ std::string DatalogProgram::Expression()
 
 	return outString;
 }
+//parse for + or * operator
 std::string DatalogProgram::Operator()
 {
 	if ((*currToken)->type == ADD)

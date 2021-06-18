@@ -7,6 +7,7 @@ Rule::~Rule()
 {
 }
 
+//prints head predicate to string, ":-", then all predicates in the rules list
 std::string Rule::ToString()
 {
 	std::string outString = headPredicate.ToString();
