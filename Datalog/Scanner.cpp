@@ -9,13 +9,16 @@ Scanner::~Scanner()
 	}
 }
 
+//loops through input file determining what each token is
 void Scanner::Scan(std::ifstream& in)
 {
 	char currChar;
 	size_t currLine = 1;
 
+	//loop through file determining each token
 	do
 	{
+		//check which type the next token is based on the next character
 		currChar = in.get();
 
 		if (currChar == ',') tokens.push_back(new Token(COMMA, ",", currLine));
@@ -37,14 +40,16 @@ void Scanner::Scan(std::ifstream& in)
 		else if (currChar == '#') ScanComment(in, currLine);
 		else if (isalpha(currChar)) ScanID(in, currLine);
 		else if (currChar == '\'') ScanString(in, currLine);
-		else if (currChar == '\n') ++currLine;
+		else if (currChar == '\n') ++currLine; //not a token, but need to update line number
 		else if (!iswspace(currChar) && currChar != EOF) tokens.push_back(new Token(UNDEFINED, std::string(1, currChar), currLine));
 
 	} while (currChar != EOF);
 
+	//when hit end, add EOF token
 	tokens.push_back(new Token(END_OF_FILE, "", currLine));
 }
 
+//prints out all tokens in tokens vector
 std::string Scanner::ToString()
 {
 	std::string outString = "";
@@ -53,6 +58,9 @@ std::string Scanner::ToString()
 	return outString;
 }
 
+//All 3 scan functions below take the input file and the current line number
+//where needed, these will update the line number
+//scans a string token and pushes it onto tokens vector
 void Scanner::ScanString(std::ifstream& in, size_t& currLine)
 {
 	std::string tokenValue = "'";
@@ -87,7 +95,8 @@ void Scanner::ScanString(std::ifstream& in, size_t& currLine)
 	tokens.push_back(new Token(STRING, tokenValue, startLine));
 }
 
-//fixme add keywords
+//scans a ID token and pushes it onto tokens vector
+//will also check for keywods Schemes, Facts, Rules, and Queries
 void Scanner::ScanID(std::ifstream& in, size_t currLine)
 {
 	in.unget();
@@ -109,6 +118,7 @@ void Scanner::ScanID(std::ifstream& in, size_t currLine)
 		tokens.push_back(new Token(ID, tokenValue, currLine));
 }
 
+//scans a Comment token and pushes it onto tokens vector
 void Scanner::ScanComment(std::ifstream& in, size_t& currLine)
 {
 	size_t startLine = currLine;
@@ -150,6 +160,7 @@ void Scanner::ScanComment(std::ifstream& in, size_t& currLine)
 	//tokens.push_back(new Token(COMMENT, tokenValue, startLine));
 }
 
+//Getter
 std::vector<Token*>& Scanner::GetTokens()
 {
 	return tokens;
